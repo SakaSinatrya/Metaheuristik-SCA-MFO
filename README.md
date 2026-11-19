@@ -103,7 +103,7 @@ flowchart TD
 ### Tahapan Alur Kerja:
 1. **Inisialisasi Data:** Program membaca dataset GoCJ dari `src/main/resources/` dan membuat daftar objek `CloudletSimple` serta daftar referensi `VmSimple`.
 2. **Pencarian Optimasi (SCA & MFO):**
-   - Agen/ngengat merepresentasikan solusi pemetaan tugas ke VM dalam ruang kontinu $[0, VM\_COUNT - 1]$.
+   - Agen/ngengat merepresentasikan solusi pemetaan tugas ke VM dalam ruang kontinu $[0, m - 1]$ (rentang ID VM $0$ hingga $7$, dengan $m = 8$).
    - Setiap posisi dievaluasi nilai *fitness*-nya berdasarkan Makespan estimasi.
    - Algoritma SCA dan MFO memperbarui posisi seluruh individu hingga mencapai `MAX_ITERATION` (100 iterasi).
 3. **Decoding Solusi:** Vektor posisi kontinu terbaik dibulatkan (*rounding*) menjadi indeks integer diskrit VM ($0$ sampai $7$).
@@ -178,7 +178,7 @@ $$
 Untuk menghindari konvergensi prematur (*stagnation*) pada optimum lokal dan menyeimbangkan eksplorasi dengan eksploitasi, jumlah api yang aktif dikurangi secara dinamis sepanjang iterasi:
 
 $$
-Flame\_No = \text{round}\left(N - t \cdot \left(\frac{N - 1}{T}\right)\right)
+\text{FlameNo} = \text{round}\left(N - t \cdot \left(\frac{N - 1}{T}\right)\right)
 $$
 
 dengan $N$ adalah ukuran populasi awal (`POPULATION_SIZE = 30`), $t$ adalah iterasi saat ini, dan $T$ adalah iterasi maksimum (`MAX_ITERATION = 100`). Pada iterasi akhir, seluruh ngengat hanya memperbarui posisi terhadap api terbaik pertama.
@@ -259,10 +259,10 @@ $$
 
 #### Formulasi Total Konsumsi Energi:
 $$
-\text{Energy (kWh)} = \frac{\text{HOST\_COUNT} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}
+\text{Energy (kWh)} = \frac{N_{\text{host}} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}
 $$
 
-- $\text{HOST\_COUNT} = 4$: Jumlah Host fisik aktif di Datacenter.
+- $N_{\text{host}} = 4$: Jumlah Host fisik aktif di Datacenter (`HOST_COUNT = 4`).
 - $P_{\text{max}} = 250\text{ Watt}$: Konsumsi daya listrik pada beban penuh ($100\%$ CPU).
 - $P_{\text{idle}} = 60\% \times P_{\text{max}} = 150\text{ Watt}$: Konsumsi daya listrik dasar saat menganggur (*idle*).
 - Faktor pembagi $3.600.000$: Konversi dari satuan Joule (Watt $\times$ detik) menjadi kilowatt-hour (kWh).
@@ -277,7 +277,7 @@ $$
 | **Makespan** | $\max_{j} \text{Load}(VM_j)$ | Detik ($s$) | $\downarrow$ Minimum | Waktu proses penyelesaian seluruh tugas secepat mungkin |
 | **Resource Utilization** | $\left(\frac{\overline{\text{Load}}}{\text{Makespan}}\right) \times 100\%$ | Persen ($\%$) | $\uparrow$ Maksimum | Seluruh VM bekerja optimal tanpa ada yang *idle* |
 | **Load Balancing** | $\sqrt{\frac{1}{m} \sum (\text{Load}_j - \overline{\text{Load}})^2}$ | Angka Riil | $\downarrow$ Minimum | Beban kerja terdistribusi merata ke seluruh VM |
-| **Konsumsi Energi** | $\frac{\text{HostCount} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}$ | Kilowatt-hour ($\text{kWh}$) | $\downarrow$ Minimum | Penggunaan daya listrik seminimal mungkin |
+| **Konsumsi Energi** | $\frac{N_{\text{host}} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}$ | Kilowatt-hour ($\text{kWh}$) | $\downarrow$ Minimum | Penggunaan daya listrik seminimal mungkin |
 
 ---
 
