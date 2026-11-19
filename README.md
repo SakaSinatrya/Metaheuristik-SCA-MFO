@@ -118,53 +118,106 @@ flowchart TD
 ## Algoritma Metaheuristik yang Digunakan
 
 ### 1. Sine Cosine Algorithm (SCA)
-Dikembangkan oleh Seyedali Mirjalili (2016), SCA memanfaatkan sifat matematis osilasi fungsi trigonometri sinus ($\sin$) dan kosinus ($\cos$) untuk melakukan eksplorasi (*exploration*) dan eksploitasi (*exploitation*) pada ruang pencarian.
+Dikembangkan oleh Seyedali Mirjalili (2016), SCA memanfaatkan sifat matematis osilasi fungsi trigonometri sinus ($\sin$) dan kosinus ($\cos$) untuk melakukan eksplorasi (*exploration*) dan eksploitasi (*exploitation*) pada ruang pencarian solusi.
 
-Pembaruan posisi agen:
-$$X_i^{t+1} = \begin{cases} X_i^t + r_1 \sin(r_2) \cdot |r_3 P_i^t - X_i^t|, & r_4 < 0.5 \\ X_i^t + r_1 \cos(r_2) \cdot |r_3 P_i^t - X_i^t|, & r_4 \ge 0.5 \end{cases}$$
+#### a. Persamaan Pembaruan Posisi Agen
+Pada setiap iterasi $t$, posisi agen ke-$i$ pada dimensi ke-$d$ diperbarui menggunakan persamaan matematis:
 
-- $P_i^t$: Posisi terbaik (*destination point*) global yang ditemukan sejauh ini.
-- $r_1 = a - t \cdot \left(\frac{a}{T}\right)$: Parameter adaptif yang berkurang linear dari $a=2$ menuju $0$.
-- $r_2 \in [0, 2\pi]$: Menentukan arah dan jarak pergerakan.
-- $r_3 \in [0, 2]$: Bobot acak (*stochastic weight*) pada target terbaik untuk memperkuat atau melemahkan pengaruh tujuan.
-- $r_4 \in [0, 1]$: Pengalih stokastik antara komponen sinus dan kosinus.
+$$
+X_{i,d}^{t+1} = \begin{cases} 
+X_{i,d}^t + r_1 \cdot \sin(r_2) \cdot \left| r_3 \cdot P_d^t - X_{i,d}^t \right|, & \text{jika } r_4 < 0.5 \\[12pt]
+X_{i,d}^t + r_1 \cdot \cos(r_2) \cdot \left| r_3 \cdot P_d^t - X_{i,d}^t \right|, & \text{jika } r_4 \ge 0.5 
+\end{cases}
+$$
+
+di mana $P_d^t$ adalah posisi terbaik (*best destination point*) pada dimensi $d$ yang telah ditemukan oleh populasi hingga iterasi $t$.
+
+#### b. Persamaan Parameter Adaptif ($r_1$)
+Untuk memastikan terjadinya transisi yang mulus dari tahap eksplorasi global ke tahap eksploitasi lokal, parameter $r_1$ diturunkan secara linear terhadap iterasi:
+
+$$
+r_1 = a - t \cdot \left(\frac{a}{T}\right)
+$$
+
+dengan nilai konstanta $a = 2$, $t$ adalah iterasi saat ini, dan $T$ adalah iterasi maksimum (`MAX_ITERATION = 100`).
+
+#### c. Rincian Peran Parameter SCA
+| Parameter | Nilai / Rentang | Peran & Pengaruh Matematis |
+|:---:|:---:|:---|
+| **$r_1$** | $2 \to 0$ (Linear) | **Menentukan radius area pencarian**: Mengarahkan perpindahan agen menuju ruang antara agen dan target tujuan ($r_1 \le 1$, eksploitasi) atau di luar target tujuan ($r_1 > 1$, eksplorasi). |
+| **$r_2$** | $[0, 2\pi]$ | **Menentukan arah & jarak**: Menentukan seberapa jauh pergerakan agen harus menuju atau menjauhi posisi terbaik tujuan. |
+| **$r_3$** | $[0, 2]$ | **Bobot stokastik target ($P_d^t$)**: Memberikan efek acak untuk memperkuat ($r_3 > 1$) atau mengurangi ($r_3 < 1$) pengaruh posisi target terbaik. |
+| **$r_4$** | $[0, 1]$ | **Saklar transisi (*switching mechanism*)**: Mengontrol pergantian probabilistik antara penggunaan fungsi sinus ($r_4 < 0.5$) dan kosinus ($r_4 \ge 0.5$). |
 
 ---
 
 ### 2. Moth-Flame Optimization (MFO)
 Dikembangkan oleh Seyedali Mirjalili (2015), MFO mengemulasikan mekanisme navigasi melintang (*transverse orientation*) ngengat (*moths*) di alam bebas yang mempertahankan sudut konstan terhadap sumber cahaya/api (*flames*).
 
-- **Spiral Logaritmik**: Pembaruan posisi ngengat terhadap api target:
-  $$M_i = D_i \cdot e^{b \cdot r} \cdot \cos(2\pi r) + F_j$$
-  di mana $D_i = |F_j - M_i|$ adalah jarak ngengat ke api, $b=1$ adalah konstanta bentuk spiral, dan $r \in [a, 1]$ adalah bilangan acak dengan parameter $a$ meluruh linear dari $-1$ menuju $-2$.
-- **Pengurangan Api Adaptif (*Adaptive Flame Reduction*)**:
-  Jumlah api diperbarui secara adaptif untuk menyeimbangkan fase eksplorasi dan eksploitasi:
-  $$Flame\_No = \text{round}\left(N - t \cdot \frac{N - 1}{T}\right)$$
+#### a. Persamaan Pergerakan Spiral Logaritmik
+Setiap ngengat memperbarui posisinya terhadap api (*flame*) target menggunakan model spiral logaritmik:
+
+$$
+M_{i,d}^{t+1} = D_i \cdot e^{b \cdot r} \cdot \cos(2\pi r) + F_{j,d}^t
+$$
+
+di mana:
+- $D_i = \left| F_{j,d}^t - M_{i,d}^t \right|$ merepresentasikan jarak linier antara ngengat ke-$i$ dengan api ke-$j$.
+- $b = 1$ adalah konstanta yang mendefinisikan bentuk spiral logaritmik.
+- $r \in [a, 1]$ adalah bilangan acak yang menentukan kedekatan posisi berikutnya terhadap api ($r = -1$ adalah titik terdekat ke api, $r = 1$ adalah titik terjauh).
+- $F_{j,d}^t$ adalah posisi api ke-$j$ pada dimensi ke-$d$.
+
+#### b. Persamaan Penurunan Adaptif Parameter Spiral ($a$)
+Parameter $a$ diturunkan secara linear dari $-1$ menuju $-2$ untuk mempercepat konvergensi di sekitar api:
+
+$$
+a = -1 + t \cdot \left(\frac{-1}{T}\right)
+$$
+
+#### c. Persamaan Pengurangan Jumlah Api Adaptif (*Adaptive Flame Reduction*)
+Untuk menghindari konvergensi prematur (*stagnation*) pada optimum lokal dan menyeimbangkan eksplorasi dengan eksploitasi, jumlah api yang aktif dikurangi secara dinamis sepanjang iterasi:
+
+$$
+Flame\_No = \text{round}\left(N - t \cdot \left(\frac{N - 1}{T}\right)\right)
+$$
+
+dengan $N$ adalah ukuran populasi awal (`POPULATION_SIZE = 30`), $t$ adalah iterasi saat ini, dan $T$ adalah iterasi maksimum (`MAX_ITERATION = 100`). Pada iterasi akhir, seluruh ngengat hanya memperbarui posisi terhadap api terbaik pertama.
 
 ---
 
 ## 4 Metrik Evaluasi Kinerja
 
-1. **Makespan (Detik)**
-   Waktu penyelesaian akhir dari seluruh tugas:
-   $$Makespan = \max_{j \in \{0, \dots, VM-1\}} Load(VM_j)$$
-   *(Semakin rendah semakin baik)*
+1. **Makespan (Detik)**  
+   Waktu penyelesaian akhir dari seluruh tugas (*completion time* maksimum):
+   $$
+   Makespan = \max_{j \in \{0, \dots, VM-1\}} Load(VM_j)
+   $$
+   *(Semakin rendah nilainya, semakin baik performa penjadwalan)*
 
-2. **Resource Utilization (%)**
+2. **Resource Utilization (%)**  
    Tingkat pemanfaatan rata-rata seluruh mesin terhadap Makespan:
-   $$Utilization = \left(\frac{\overline{Load}}{Makespan}\right) \times 100\%$$
-   *(Semakin tinggi semakin baik)*
+   $$
+   Utilization = \left(\frac{\overline{Load}}{Makespan}\right) \times 100\%
+   $$
+   di mana $\overline{Load} = \frac{1}{m} \sum_{j=0}^{m-1} Load(VM_j)$.  
+   *(Semakin tinggi persentasenya, semakin efisien utilisasi sumber daya)*
 
-3. **Load Balancing (Standard Deviation)**
-   Penyebaran beban eksekusi di antara seluruh VM:
-   $$\sigma = \sqrt{\frac{1}{m} \sum_{j=1}^{m} (Load_j - \overline{Load})^2}$$
-   *(Semakin rendah menunjukkan beban kerja yang lebih seimbang)*
+3. **Load Balancing (Standard Deviation)**  
+   Penyebaran beban eksekusi di antara seluruh VM untuk mengukur keseimbangan beban:
+   $$
+   \sigma = \sqrt{\frac{1}{m} \sum_{j=0}^{m-1} \left(Load(VM_j) - \overline{Load}\right)^2}
+   $$
+   *(Semakin rendah nilainya, semakin merata pembagian beban antar VM)*
 
-4. **Konsumsi Energi Datacenter (kWh)**
-   Estimasi konsumsi daya berdasarkan model linier utilisasi:
-   $$P = P_{idle} + (P_{max} - P_{idle}) \times \left(\frac{Utilization}{100}\right)$$
-   $$Energy = \frac{HostCount \times P \times Makespan}{3.600.000} \text{ kWh}$$
-   *(Semakin rendah semakin hemat energi)*
+4. **Konsumsi Energi Datacenter (kWh)**  
+   Estimasi konsumsi daya fisik berdasarkan model linier utilisasi:
+   $$
+   P_{host} = P_{idle} + (P_{max} - P_{idle}) \times \left(\frac{Utilization}{100}\right)
+   $$
+   $$
+   Energy = \frac{HostCount \times P_{host} \times Makespan}{3.600.000} \text{ kWh}
+   $$
+   *(Semakin rendah nilainya, semakin hemat konsumsi energi datacenter)*
 
 ---
 
