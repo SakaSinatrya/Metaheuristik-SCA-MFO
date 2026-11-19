@@ -187,37 +187,97 @@ dengan $N$ adalah ukuran populasi awal (`POPULATION_SIZE = 30`), $t$ adalah iter
 
 ## 4 Metrik Evaluasi Kinerja
 
-1. **Makespan (Detik)**  
-   Waktu penyelesaian akhir dari seluruh tugas (*completion time* maksimum):
-   $$
-   Makespan = \max_{j \in \{0, \dots, VM-1\}} Load(VM_j)
-   $$
-   *(Semakin rendah nilainya, semakin baik performa penjadwalan)*
+Untuk membandingkan performa penjadwalan antara algoritma **SCA** dan **MFO**, digunakan 4 metrik evaluasi kuantitatif utama:
 
-2. **Resource Utilization (%)**  
-   Tingkat pemanfaatan rata-rata seluruh mesin terhadap Makespan:
-   $$
-   Utilization = \left(\frac{\overline{Load}}{Makespan}\right) \times 100\%
-   $$
-   di mana $\overline{Load} = \frac{1}{m} \sum_{j=0}^{m-1} Load(VM_j)$.  
-   *(Semakin tinggi persentasenya, semakin efisien utilisasi sumber daya)*
+---
 
-3. **Load Balancing (Standard Deviation)**  
-   Penyebaran beban eksekusi di antara seluruh VM untuk mengukur keseimbangan beban:
-   $$
-   \sigma = \sqrt{\frac{1}{m} \sum_{j=0}^{m-1} \left(Load(VM_j) - \overline{Load}\right)^2}
-   $$
-   *(Semakin rendah nilainya, semakin merata pembagian beban antar VM)*
+### 1. Makespan (Completion Time)
 
-4. **Konsumsi Energi Datacenter (kWh)**  
-   Estimasi konsumsi daya fisik berdasarkan model linier utilisasi:
-   $$
-   P_{host} = P_{idle} + (P_{max} - P_{idle}) \times \left(\frac{Utilization}{100}\right)
-   $$
-   $$
-   Energy = \frac{HostCount \times P_{host} \times Makespan}{3.600.000} \text{ kWh}
-   $$
-   *(Semakin rendah nilainya, semakin hemat konsumsi energi datacenter)*
+Makespan adalah waktu penyelesaian akhir dari seluruh rangkaian tugas, yaitu waktu eksekusi pada *Virtual Machine* yang paling lambat menyelesaikan pekerjaannya.
+
+#### Formulasi Matematis:
+$$
+\text{Makespan} = \max_{j \in \{0, 1, \dots, m-1\}} \text{Load}(VM_j)
+$$
+
+di mana beban komputasi total pada mesin ke-$j$ ($\text{Load}(VM_j)$) dihitung dari penjumlahan waktu eksekusi setiap Cloudlet yang dialokasikan ke VM tersebut:
+
+$$
+\text{Load}(VM_j) = \sum_{c \in \mathcal{C}_j} \frac{\text{Length}_c}{\text{MIPS}_j}
+$$
+
+- $\mathcal{C}_j$: Himpunan seluruh Cloudlet yang dialokasikan pada $VM_j$.
+- $\text{Length}_c$: Panjang instruksi Cloudlet $c$ dalam satuan *Million Instructions* (MI).
+- $\text{MIPS}_j$: Kapasitas pemrosesan $VM_j$ dalam satuan *Million Instructions Per Second*.
+- **Arah Optimasi:** **Minimalkan ($\downarrow$)**. Semakin kecil nilai Makespan, semakin cepat seluruh tugas terselesaikan.
+
+---
+
+### 2. Resource Utilization (RU)
+
+Resource Utilization mengukur persentase efisiensi pemanfaatan rata-rata seluruh mesin terhadap Makespan total. Metrik ini menunjukkan seberapa baik kapasitas pemrosesan seluruh VM digunakan tanpa membiarkan mesin menganggur (*idle*).
+
+#### Formulasi Matematis:
+$$
+\text{Utilization} = \left( \frac{\overline{\text{Load}}}{\text{Makespan}} \right) \times 100\%
+$$
+
+di mana $\overline{\text{Load}}$ merupakan rata-rata beban kerja di seluruh $m$ mesin virtual:
+
+$$
+\overline{\text{Load}} = \frac{1}{m} \sum_{j=0}^{m-1} \text{Load}(VM_j)
+$$
+
+- $m$: Jumlah total Virtual Machines yang aktif ($m = 8$).
+- **Arah Optimasi:** **Maksimalkan ($\uparrow$)**. Semakin tinggi nilai persentase (mendekati $100\%$), semakin produktif seluruh VM bekerja secara bersamaan.
+
+---
+
+### 3. Load Balancing (Standard Deviation / $\sigma$)
+
+Standard Deviation mengukur dispersi atau tingkat ketimpangan persebaran beban komputasi di antara seluruh Virtual Machines.
+
+#### Formulasi Matematis:
+$$
+\sigma = \sqrt{\frac{1}{m} \sum_{j=0}^{m-1} \left( \text{Load}(VM_j) - \overline{\text{Load}} \right)^2}
+$$
+
+- Jika nilai $\sigma \approx 0$, beban kerja terdistribusi merata ke seluruh VM sesuai proporsi kemampuannya.
+- Jika nilai $\sigma$ besar, terjadi ketimpangan (*imbalance*) di mana sebagian VM mengalami kelebihan beban (*overloaded*) sementara yang lain menganggur (*underloaded*).
+- **Arah Optimasi:** **Minimalkan ($\downarrow$)**. Semakin kecil standar deviasi, pembagian beban kerja semakin seimbang dan stabil.
+
+---
+
+### 4. Konsumsi Energi Datacenter (Energy Consumption in kWh)
+
+Menghitung estimasi total konsumsi energi listrik oleh seluruh Host fisik selama proses komputasi berlangsung, mengadopsi model daya linier berbasis utilisasi CPU.
+
+#### Formulasi Konsumsi Daya Host Fisik:
+$$
+P_{\text{host}} = P_{\text{idle}} + \left( P_{\text{max}} - P_{\text{idle}} \right) \times \left( \frac{\text{Utilization}}{100} \right)
+$$
+
+#### Formulasi Total Konsumsi Energi:
+$$
+\text{Energy (kWh)} = \frac{\text{HOST\_COUNT} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}
+$$
+
+- $\text{HOST\_COUNT} = 4$: Jumlah Host fisik aktif di Datacenter.
+- $P_{\text{max}} = 250\text{ Watt}$: Konsumsi daya listrik pada beban penuh ($100\%$ CPU).
+- $P_{\text{idle}} = 60\% \times P_{\text{max}} = 150\text{ Watt}$: Konsumsi daya listrik dasar saat menganggur (*idle*).
+- Faktor pembagi $3.600.000$: Konversi dari satuan Joule (Watt $\times$ detik) menjadi kilowatt-hour (kWh).
+- **Arah Optimasi:** **Minimalkan ($\downarrow$)**. Semakin kecil konsumsi energi, semakin ramah lingkungan dan hemat biaya operasional datacenter.
+
+---
+
+### 📌 Ringkasan 4 Metrik Evaluasi
+
+| Metrik Evaluasi | Simbol / Formulasi Utama | Satuan | Arah Optimasi | Target Kinerja |
+|:---|:---:|:---:|:---:|:---|
+| **Makespan** | $\max_{j} \text{Load}(VM_j)$ | Detik ($s$) | $\downarrow$ Minimum | Waktu proses penyelesaian seluruh tugas secepat mungkin |
+| **Resource Utilization** | $\left(\frac{\overline{\text{Load}}}{\text{Makespan}}\right) \times 100\%$ | Persen ($\%$) | $\uparrow$ Maksimum | Seluruh VM bekerja optimal tanpa ada yang *idle* |
+| **Load Balancing** | $\sqrt{\frac{1}{m} \sum (\text{Load}_j - \overline{\text{Load}})^2}$ | Angka Riil | $\downarrow$ Minimum | Beban kerja terdistribusi merata ke seluruh VM |
+| **Konsumsi Energi** | $\frac{\text{HostCount} \times P_{\text{host}} \times \text{Makespan}}{3.600.000}$ | Kilowatt-hour ($\text{kWh}$) | $\downarrow$ Minimum | Penggunaan daya listrik seminimal mungkin |
 
 ---
 
