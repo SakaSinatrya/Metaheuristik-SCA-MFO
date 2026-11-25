@@ -458,7 +458,7 @@ private static final String OUTPUT_DIR = "output";
 
 ## Justifikasi Parameter Metaheuristik (`N = 30`, `T = 100`)
 
-Penetapan `POPULATION_SIZE = 30` ($N$) dan `MAX_ITERATION = 100` ($T$) didasarkan pada **standar literatur metaheuristik** serta **analisis sensitivitas parameter empiris** (*parameter sensitivity analysis*) pada dataset proyek ini untuk menyeimbangkan kualitas solusi (*Makespan*) dan biaya waktu komputasi ($O(N \cdot T \cdot D)$).
+Penetapan `POPULATION_SIZE = 30` ($N$) dan `MAX_ITERATION = 100` ($T$) didasarkan pada **standar literatur metaheuristik** serta **analisis sensitivitas parameter empiris** (*parameter sensitivity analysis*) pada dataset proyek ini untuk menyeimbangkan kualitas solusi (*Makespan*) dan kompleksitas waktu komputasi sebesar $O(N \cdot T \cdot D)$.
 
 ### 1. Justifikasi Berdasarkan Literatur
 - **Ukuran Populasi ($N = 30$):** Merupakan nilai *baseline* standar yang direkomendasikan dan digunakan pada eksperimen benchmark di paper asli **Moth-Flame Optimization** (Mirjalili, 2015) serta **Sine Cosine Algorithm** (Mirjalili, 2016). Jumlah 30 agen/individu memberikan variasi stokastik yang memadai untuk menjaga keragaman solusi tanpa membebani memori maupun waktu eksekusi.
@@ -497,7 +497,7 @@ Pengujian empiris dilakukan pada dataset `GoCJ_Dataset_100.txt` (100 Cloudlets) 
 
 ---
 
-## 📈 Hasil Eksperimen Multi-Run (1 s.d. 50 Runs) & Analisis Grafik
+## Hasil Eksperimen Multi-Run (1 s.d. 50 Runs) & Analisis Grafik
 
 Eksperimen dijalankan pada sampel dataset **`GoCJ_Dataset_100.txt`** (100 Cloudlets) sebanyak **50 kali percobaan berurutan**, dengan pencatatan rata-rata kumulatif pada titik **`1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50` runs** (data tersimpan di [output/hasil_multi_run_50.csv](output/hasil_multi_run_50.csv)).
 
